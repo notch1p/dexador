@@ -58,7 +58,7 @@
         for name = (string-downcase name-camelcased)
         if (gethash name hash)
           do (setf (gethash name hash)
-                   (format nil "~A, ~A" (gethash name hash) value))
+                   (format nil "~A~C~A" (gethash name hash) #\newline value))
         else
           do (setf (gethash name hash) value)
         finally (return hash)))
@@ -195,8 +195,11 @@
             (let ((status (query-status-code req))
                   (response-headers (query-headers* req)))
               (when cookie-jar
-                (when-let (set-cookies (append (ensure-list (gethash "set-cookie" response-headers))
-                                               (ensure-list (gethash "set-cookie2" response-headers))))
+                (when-let (set-cookies (let 
+                                           ((set-cookie (gethash "set-cookie" response-headers))
+                                            (set-cookie-2 (gethash "set-cookie2" response-headers)))
+                                          (append (ensure-list (if set-cookie (split-sequence #\newline set-cookie) set-cookie))
+                                                  (ensure-list (if set-cookie-2 (split-sequence #\newline set-cookie-2) set-cookie-2)))))
                   (merge-cookies cookie-jar
                                  (remove nil (mapcar (lambda (cookie)
                                                        (declare (type string cookie))
